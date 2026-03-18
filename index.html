@@ -24,12 +24,19 @@
       border-radius: 5px;
       border: 1px solid #ccc;
     }
-    .expense {
-      margin-bottom: 10px;
-      background: #fff;
+    .category {
+      margin-bottom: 15px;
+      background: #e9f5ff;
       padding: 10px;
-      border-radius: 5px;
+      border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .expense {
+      margin: 8px 0;
+      background: #fff;
+      padding: 8px;
+      border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     button {
       margin: 5px;
@@ -106,9 +113,9 @@
   <label>📅 เดือน/ปี: </label>
   <input type="month" id="salaryMonth" value="2026-03"><br><br>
 
-  <h2>📌 ค่าใช้จ่ายประจำ</h2>
+  <h2>📌 หมวดค่าใช้จ่าย</h2>
   <div id="expenses"></div>
-  <button onclick="addExpense()">➕ เพิ่มค่าใช้จ่าย</button>
+  <button onclick="addCategory()">➕ เพิ่มหมวดค่าใช้จ่าย</button>
 
   <br><br>
   <button onclick="generateReport()">📊 ออกรายงานรายเดือน</button>
@@ -125,17 +132,34 @@
       const savedMonth = localStorage.getItem("salaryMonth");
       if (savedMonth) document.getElementById("salaryMonth").value = savedMonth;
 
-      const savedExpenses = JSON.parse(localStorage.getItem("expenses") || "[]");
-      savedExpenses.forEach(exp => addExpense(exp.name, exp.amount, exp.dueDate, exp.paidInfo));
+      const savedCategories = JSON.parse(localStorage.getItem("categories") || "[]");
+      savedCategories.forEach(cat => {
+        addCategory(cat.name);
+        const lastCat = document.querySelector(".category:last-child");
+        cat.subExpenses.forEach(exp => addSubExpense(lastCat.querySelector("button"), exp.name, exp.amount, exp.dueDate, exp.paidInfo));
+      });
 
       notifyExpenses();
     };
 
-    function addExpense(name="", amount="", dueDate="", paidInfo="") {
+    function addCategory(name="") {
+      const div = document.createElement("div");
+      div.className = "category";
+      div.innerHTML = `
+        <h3>${name || "หมวดค่าใช้จ่ายใหม่"}</h3>
+        <div class="sub-expenses"></div>
+        <button onclick="addSubExpense(this)">➕ เพิ่มกล่องย่อย</button>
+        <button onclick="this.parentElement.remove(); saveData();">❌ ลบหมวด</button>
+      `;
+      document.getElementById("expenses").appendChild(div);
+    }
+
+    function addSubExpense(button, name="", amount="", dueDate="", paidInfo="") {
+      const container = button.previousElementSibling;
       const div = document.createElement("div");
       div.className = "expense";
       div.innerHTML = `
-        <input type="text" placeholder="ชื่อค่าใช้จ่าย" value="${name}">
+        <input type="text" placeholder="ชื่อค่าใช้จ่ายย่อย" value="${name}">
         <input type="number" placeholder="จำนวนเงิน" value="${amount}">
         <input type="date" value="${dueDate}">
         <label>
@@ -144,7 +168,7 @@
         <span class="paid-info">${paidInfo}</span>
         <button onclick="this.parentElement.remove(); saveData();">❌ ลบ</button>
       `;
-      document.getElementById("expenses").appendChild(div);
+      container.appendChild(div);
     }
 
     function markPaid(checkbox) {
@@ -162,7 +186,7 @@
       const salary = parseFloat(document.getElementById("salary").value) || 0;
       const salaryMonth = document.getElementById("salaryMonth").value || "-";
       let totalExpenses = 0;
-      const expenseItems = document.querySelectorAll(".expense");
+      const categories = document.querySelectorAll(".category");
 
       let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
       reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
@@ -174,19 +198,25 @@
           <th>สถานะ</th>
         </tr>`;
 
-      expenseItems.forEach(exp => {
-        const name = exp.children[0].value || "ไม่ระบุ";
-        const amount = parseFloat(exp.children[1].value) || 0;
-        const dueDate = exp.children[2].value || "-";
-        const paidInfo = exp.children[4].textContent;
-        totalExpenses += amount;
+      categories.forEach(cat => {
+        const catName = cat.querySelector("h3").textContent;
+        reportText += `<tr><td colspan="4" style="background:#eee;"><b>${catName}</b></td></tr>`;
+        
+        const subItems = cat.querySelectorAll(".expense");
+        subItems.forEach(exp => {
+          const name = exp.children[0].value || "ไม่ระบุ";
+          const amount = parseFloat(exp.children[1].value) || 0;
+          const dueDate = exp.children[2].value || "-";
+          const paidInfo = exp.children[4].textContent;
+          totalExpenses += amount;
 
-        reportText += `<tr>
-          <td>${name}</td>
-          <td>${amount} บาท</td>
-          <td>${dueDate}</td>
-          <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
-        </tr>`;
+          reportText += `<tr>
+            <td>${name}</td>
+            <td>${amount} บาท</td>
+            <td>${dueDate}</td>
+            <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
+          </tr>`;
+        });
       });
 
       reportText += `</table>`;
@@ -197,6 +227,11 @@
       saveData();
     }
 
+    async function exportImage() {
+      const report = document.getElementById("report");
+      const canvas = await html2canvas(report);
+      const link = document.createElement("a");
+      link
     async function exportImage() {
       const report = document.getElementById("report");
       const canvas = await html2canvas(report);
@@ -217,18 +252,21 @@
       pdf.save("report.pdf");
     }
 
-        function notifyExpenses() {
-      const expenseItems = document.querySelectorAll(".expense");
+    function notifyExpenses() {
+      const categories = document.querySelectorAll(".category");
       const today = new Date().toISOString().split("T")[0];
       let dueList = [];
 
-      expenseItems.forEach(exp => {
-        const name = exp.children[0].value || "ไม่ระบุ";
-        const dueDate = exp.children[2].value;
-        const paidInfo = exp.children[4].textContent;
-        if (dueDate === today && (!paidInfo || paidInfo.trim() === "")) {
-          dueList.push(name);
-        }
+      categories.forEach(cat => {
+        const subItems = cat.querySelectorAll(".expense");
+        subItems.forEach(exp => {
+          const name = exp.children[0].value || "ไม่ระบุ";
+          const dueDate = exp.children[2].value;
+          const paidInfo = exp.children[4].textContent;
+          if (dueDate === today && (!paidInfo || paidInfo.trim() === "")) {
+            dueList.push(name);
+          }
+        });
       });
 
       if (dueList.length > 0) {
@@ -242,17 +280,23 @@
       localStorage.setItem("salary", salary);
       localStorage.setItem("salaryMonth", salaryMonth);
 
-      const expenseItems = document.querySelectorAll(".expense");
-      let expenses = [];
-      expenseItems.forEach(exp => {
-        expenses.push({
-          name: exp.children[0].value,
-          amount: exp.children[1].value,
-          dueDate: exp.children[2].value,
-          paidInfo: exp.children[4].textContent
+      const categories = document.querySelectorAll(".category");
+      let data = [];
+      categories.forEach(cat => {
+        const catName = cat.querySelector("h3").textContent;
+        let subExpenses = [];
+        const subItems = cat.querySelectorAll(".expense");
+        subItems.forEach(exp => {
+          subExpenses.push({
+            name: exp.children[0].value,
+            amount: exp.children[1].value,
+            dueDate: exp.children[2].value,
+            paidInfo: exp.children[4].textContent
+          });
         });
+        data.push({ name: catName, subExpenses: subExpenses });
       });
-      localStorage.setItem("expenses", JSON.stringify(expenses));
+      localStorage.setItem("categories", JSON.stringify(data));
     }
   </script>
 </body>
