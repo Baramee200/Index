@@ -134,43 +134,6 @@
       saveData();
     }
 
-    function generateReport() {
-      const salary = parseFloat(document.getElementById("salary").value) || 0;
-      const salaryMonth = document.getElementById("salaryMonth").value || "-";
-      let totalExpenses = 0;
-      const expenseItems = document.querySelectorAll(".expense");
-
-      let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
-      reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
-      reportText += `<table>
-        <tr>
-          <th>ชื่อค่าใช้จ่าย</th>
-          <th>จำนวนเงิน</th>
-          <th>วันครบกำหนด</th>
-          <th>สถานะ</th>
-        </tr>`;
-
-      expenseItems.forEach(exp => {
-        const name = exp.children[0].value || "ไม่ระบุ";
-        const amount = parseFloat(exp.children[1].value) || 0;
-        const dueDate = exp.children[2].value || "-";
-        const paidInfo = exp.children[4].textContent;
-reportText += `<tr>
-  <td>${name}</td>
-  <td>${amount} บาท</td>
-  <td>${dueDate}</td>
-  <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
-</tr>`;
-
-      });
-
-      reportText += `</table>`;
-      reportText += `<p>📉 รวมค่าใช้จ่าย: ${totalExpenses} บาท</p>`;
-      reportText += `<p>✅ คงเหลือสุทธิ: ${salary - totalExpenses} บาท</p>`;
-      document.getElementById("report").innerHTML = reportText;
-      saveData();
-    }
-
     async function exportImage() {
       const report = document.getElementById("report");
       const canvas = await html2canvas(report);
