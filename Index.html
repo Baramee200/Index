@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>💼 ระบบบริหารเงินเดือน</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      margin: 20px;
+    }
+    h1 {
+      color: #0066cc;
+      text-align: center;
+    }
+    h2 {
+      color: #ff6600;
+    }
+    input {
+      padding: 6px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    .expense {
+      margin-bottom: 10px;
+      background: #fff;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    button {
+      margin: 5px;
+      padding: 8px 15px;
+      background: linear-gradient(45deg, #00c3ff, #0066cc);
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      font-weight: bold;
+    }
+    button:hover {
+      background: linear-gradient(45deg, #ffcc00, #ff6600);
+    }
+    #report {
+      margin-top: 20px;
+      padding: 15px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+    }
+    table th {
+      background: #0066cc;
+      color: white;
+    }
+    table tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <h1>💼 ระบบบริหารเงินเดือน</h1>
+
+  <label>💰 เงินเดือน (บาท): </label>
+  <input type="number" id="salary" value="30000">
+  <label>📅 เดือน/ปี: </label>
+  <input type="month" id="salaryMonth" value="2026-03"><br><br>
+
+  <h2>📌 ค่าใช้จ่ายประจำ</h2>
+  <div id="expenses"></div>
+  <button onclick="addExpense()">➕ เพิ่มค่าใช้จ่าย</button>
+
+  <br><br>
+  <button onclick="generateReport()">📊 ออกรายงานรายเดือน</button>
+  <button onclick="exportImage()">🖼️ Export เป็นรูปภาพ</button>
+  <button onclick="exportPDF()">📄 Export เป็น PDF</button>
+
+  <div id="report"></div>
+
+  <script>
+    // โหลดข้อมูลจาก Local Storage และเช็ค Due Date ทันที
+    window.onload = function() {
+      const savedSalary = localStorage.getItem("salary");
+      if (savedSalary) document.getElementById("salary").value = savedSalary;
+
+      const savedMonth = localStorage.getItem("salaryMonth");
+      if (savedMonth) document.getElementById("salaryMonth").value = savedMonth;
+
+      const savedExpenses = JSON.parse(localStorage.getItem("expenses") || "[]");
+      savedExpenses.forEach(exp => addExpense(exp.name, exp.amount, exp.dueDate, exp.paidInfo));
+
+      notifyExpenses(); // เช็ค Due Date อัตโนมัติ
+    };
+
+    function addExpense(name="", amount="", dueDate="", paidInfo="") {
+  const div = document.createElement("div");
+  div.className = "expense";
+  div.innerHTML = `
+    <input type="text" placeholder="ชื่อค่าใช้จ่าย" value="${name}">
+    <input type="number" placeholder="จำนวนเงิน" value="${amount}">
+    <input type="date" value="${dueDate}">
+    <label>
+      <input type="checkbox" onchange="markPaid(this)" ${paidInfo ? "checked" : ""}> ✅
+    </label>
+    <span class="paid-info">${paidInfo}</span>
+    <button onclick="this.parentElement.remove(); saveData();">❌ ลบ</button>
+  `;
+  document.getElementById("expenses").appendChild(div);
+}
+
+
+    function markPaid(checkbox) {
+      const info = checkbox.parentElement.nextElementSibling;
+      if (checkbox.checked) {
+        const now = new Date();
+        info.textContent = `จ่ายแล้วเมื่อ ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
+      } else {
+        info.textContent = "";
+      }
+      saveData();
+    }
+
+    function generateReport() {
+      const salary = parseFloat(document.getElementById("salary").value) || 0;
+      const salaryMonth = document.getElementById("salaryMonth").value || "-";
+      let totalExpenses = 0;
+      const expenseItems = document.querySelectorAll(".expense");
+
+      let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
+      reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
+      reportText += `<table>
+        <tr>
+          <th>ชื่อค่าใช้จ่าย</th>
+          <th>จำนวนเงิน</th>
+          <th>วันครบกำหนด</th>
+          <th>สถานะ</th>
+        </tr>`;
+
+      expenseItems.forEach(exp => {
+        const name = exp.children[0].value || "ไม่ระบุ";
+        const amount = parseFloat(exp.children[1].value) || 0;
+        const dueDate = exp.children[2].value || "-";
+        const paidInfo = exp.children[4].textContent;
+reportText += `<tr>
+  <td>${name}</td>
+  <td>${amount} บาท</td>
+  <td>${dueDate}</td>
+  <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
+</tr>`;
+
+      });
+
+      reportText += `</table>`;
+      reportText += `<p>📉 รวมค่าใช้จ่าย: ${totalExpenses} บาท</p>`;
+      reportText += `<p>✅ คงเหลือสุทธิ: ${salary - totalExpenses} บาท</p>`;
+      document.getElementById("report").innerHTML = reportText;
+      saveData();
+    }
+
+    async function exportImage() {
+      const report = document.getElementById("report");
+      const canvas = await html2canvas(report);
+      const link = document.createElement("a");
+      link.download = "report.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    async function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const report = document.getElementById("report");
+      const canvas = await html2canvas(report);
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF();
+      pdf.addImage(imgData, "PNG", 10, 10, 180, 0);
+      pdf.save("report.pdf");
+    }
+
+    function notifyExpenses() {
+      const expenseItems = document.querySelectorAll(".expense");
+      const today = new Date().toISOString().split("T")[0];
+      let dueList = [];
+
+      expenseItems.forEach(exp => {
+        const name = exp.children[0].value || "ไม่ระบุ";
+        const dueDate = exp.children[2].value;
+        const paidInfo = exp.children[4].textContent;
+        if (dueDate === today && paidInfo === "") {
+          dueList.push(name);
+        }
+      });
+
+      if (dueList.length > 0) {
+        alert("🔔 วันนี้มีค่าใช้จ่ายที่ต้องจ่าย:\n" + dueList.join(", "));
+      }
+    }
+
+    function saveData() {
+      const salary = document.getElementById("salary").value;
+      const salaryMonth = document.getElementById("salaryMonth").value;
+      localStorage.setItem("salary", salary);
+      localStorage.setItem("salaryMonth", salaryMonth);
+
+      const expenseItems = document.querySelectorAll(".expense");
+      let expenses = [];
+      expenseItems.forEach(exp => {
+        expenses.push({
+          name: exp.children[0].value,
+          amount: exp.children[1].value,
+          dueDate: exp.children[2].value,
+          paidInfo: exp.children[4].textContent
+        });
+      });
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+    }
+  </script> 
+</body>
+</html>
