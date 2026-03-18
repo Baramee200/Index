@@ -121,6 +121,7 @@
   <button onclick="generateReport()">📊 ออกรายงานรายเดือน</button>
   <button onclick="exportImage()">🖼️ Export เป็นรูปภาพ</button>
   <button onclick="exportPDF()">📄 Export เป็น PDF</button>
+  <button onclick="clearData()">🗑️ ล้างข้อมูลทั้งหมด</button>
 
   <div id="report"></div>
 
@@ -143,17 +144,28 @@
     };
 
     function addCategory(name="") {
-      const div = document.createElement("div");
-      div.className = "category";
-      div.innerHTML = `
-        <h3>${name || "หมวดค่าใช้จ่ายใหม่"}</h3>
-        <div class="sub-expenses"></div>
-        <button onclick="addSubExpense(this)">➕ เพิ่มกล่องย่อย</button>
-        <button onclick="this.parentElement.remove(); saveData();">❌ ลบหมวด</button>
-      `;
-      document.getElementById("expenses").appendChild(div);
-    }
+  const div = document.createElement("div");
+  div.className = "category";
+  div.innerHTML = `
+    <input type="text" class="cat-name" placeholder="ชื่อหมวดค่าใช้จ่าย" value="${name}">
+    <button onclick="toggleSubExpenses(this)">▶ พับ/ขยาย</button>
+    <div class="sub-expenses"></div>
+    <button onclick="addSubExpense(this)">➕ เพิ่มกล่องย่อย</button>
+    <button onclick="this.parentElement.remove(); saveData();">❌ ลบหมวด</button>
+  `;
+  document.getElementById("expenses").appendChild(div);
+}
 
+function toggleSubExpenses(button) {
+  const container = button.nextElementSibling;
+  if (container.style.display === "none") {
+    container.style.display = "block";
+    button.textContent = "▼ พับ/ขยาย";
+  } else {
+    container.style.display = "none";
+    button.textContent = "▶ พับ/ขยาย";
+  }
+}
     function addSubExpense(button, name="", amount="", dueDate="", paidInfo="") {
       const container = button.previousElementSibling;
       const div = document.createElement("div");
@@ -183,49 +195,49 @@
     }
 
     function generateReport() {
-      const salary = parseFloat(document.getElementById("salary").value) || 0;
-      const salaryMonth = document.getElementById("salaryMonth").value || "-";
-      let totalExpenses = 0;
-      const categories = document.querySelectorAll(".category");
+  const salary = parseFloat(document.getElementById("salary").value) || 0;
+  const salaryMonth = document.getElementById("salaryMonth").value || "-";
+  let totalExpenses = 0;
+  const categories = document.querySelectorAll(".category");
 
-      let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
-      reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
-      reportText += `<table>
-        <tr>
-          <th>ชื่อค่าใช้จ่าย</th>
-          <th>จำนวนเงิน</th>
-          <th>วันครบกำหนด</th>
-          <th>สถานะ</th>
-        </tr>`;
+  let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
+  reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
+  reportText += `<table>
+    <tr>
+      <th>ชื่อค่าใช้จ่าย</th>
+      <th>จำนวนเงิน</th>
+      <th>วันครบกำหนด</th>
+      <th>สถานะ</th>
+    </tr>`;
 
-      categories.forEach(cat => {
-        const catName = cat.querySelector("h3").textContent;
-        reportText += `<tr><td colspan="4" style="background:#eee;"><b>${catName}</b></td></tr>`;
-        
-        const subItems = cat.querySelectorAll(".expense");
-        subItems.forEach(exp => {
-          const name = exp.children[0].value || "ไม่ระบุ";
-          const amount = parseFloat(exp.children[1].value) || 0;
-          const dueDate = exp.children[2].value || "-";
-          const paidInfo = exp.children[4].textContent;
-          totalExpenses += amount;
+  categories.forEach(cat => {
+    const catName = cat.querySelector(".cat-name").value || "หมวดค่าใช้จ่าย";
+    reportText += `<tr><td colspan="4" style="background:#eee;"><b>${catName}</b></td></tr>`;
+    
+    const subItems = cat.querySelectorAll(".expense");
+    subItems.forEach(exp => {
+      const name = exp.querySelector("input[type=text]").value || "ไม่ระบุ";
+      const amount = parseFloat(exp.querySelector("input[type=number]").value) || 0;
+      const dueDate = exp.querySelector("input[type=date]").value || "-";
+      const paidInfo = exp.querySelector(".paid-info").textContent;
+      totalExpenses += amount;
 
-          reportText += `<tr>
-            <td>${name}</td>
-            <td>${amount} บาท</td>
-            <td>${dueDate}</td>
-            <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
-          </tr>`;
-        });
-      });
+      reportText += `<tr>
+        <td>${name}</td>
+        <td>${amount} บาท</td>
+        <td>${dueDate}</td>
+        <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
+      </tr>`;
+    });
+  });
 
-      reportText += `</table>`;
-      reportText += `<p>📉 รวมค่าใช้จ่าย: <b>${totalExpenses}</b> บาท</p>`;
-      reportText += `<p>✅ คงเหลือสุทธิ: <b>${salary - totalExpenses}</b> บาท</p>`;
-      document.getElementById("report").innerHTML = reportText;
+  reportText += `</table>`;
+  reportText += `<p>📉 รวมค่าใช้จ่าย: <b>${totalExpenses}</b> บาท</p>`;
+  reportText += `<p>✅ คงเหลือสุทธิ: <b>${salary - totalExpenses}</b> บาท</p>`;
+  document.getElementById("report").innerHTML = reportText;
 
-      saveData();
-    }
+  saveData();
+}
 
     async function exportImage() {
       const report = document.getElementById("report");
@@ -299,6 +311,23 @@
       });
       localStorage.setItem("categories", JSON.stringify(data));
     }
+    function clearData() {
+  if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด?")) {
+    // เคลียร์ Local Storage
+    localStorage.removeItem("salary");
+    localStorage.removeItem("salaryMonth");
+    localStorage.removeItem("categories");
+
+    // เคลียร์ค่าบนหน้าเว็บ
+    document.getElementById("salary").value = "";
+    document.getElementById("salaryMonth").value = "";
+    document.getElementById("expenses").innerHTML = "";
+    document.getElementById("report").innerHTML = "";
+
+    alert("✅ ล้างข้อมูลเรียบร้อยแล้ว");
+  }
+}
+
   </script>
 </body>
 </html>
