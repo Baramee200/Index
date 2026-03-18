@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>💼 ระบบบริหารเงินเดือน</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -68,6 +69,31 @@
     table tr:nth-child(even) {
       background: #f9f9f9;
     }
+
+    /* Responsive สำหรับมือถือ */
+    @media (max-width: 600px) {
+      body {
+        margin: 10px;
+        font-size: 14px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+      input, button {
+        width: 100%;
+        margin: 5px 0;
+        font-size: 14px;
+      }
+      table {
+        font-size: 12px;
+        display: block;
+        overflow-x: auto;
+      }
+      .expense {
+        display: block;
+        margin-bottom: 15px;
+      }
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -92,7 +118,6 @@
   <div id="report"></div>
 
   <script>
-    // โหลดข้อมูลจาก Local Storage และเช็ค Due Date ทันที
     window.onload = function() {
       const savedSalary = localStorage.getItem("salary");
       if (savedSalary) document.getElementById("salary").value = savedSalary;
@@ -103,25 +128,24 @@
       const savedExpenses = JSON.parse(localStorage.getItem("expenses") || "[]");
       savedExpenses.forEach(exp => addExpense(exp.name, exp.amount, exp.dueDate, exp.paidInfo));
 
-      notifyExpenses(); // เช็ค Due Date อัตโนมัติ
+      notifyExpenses();
     };
 
     function addExpense(name="", amount="", dueDate="", paidInfo="") {
-  const div = document.createElement("div");
-  div.className = "expense";
-  div.innerHTML = `
-    <input type="text" placeholder="ชื่อค่าใช้จ่าย" value="${name}">
-    <input type="number" placeholder="จำนวนเงิน" value="${amount}">
-    <input type="date" value="${dueDate}">
-    <label>
-      <input type="checkbox" onchange="markPaid(this)" ${paidInfo ? "checked" : ""}> ✅
-    </label>
-    <span class="paid-info">${paidInfo}</span>
-    <button onclick="this.parentElement.remove(); saveData();">❌ ลบ</button>
-  `;
-  document.getElementById("expenses").appendChild(div);
-}
-
+      const div = document.createElement("div");
+      div.className = "expense";
+      div.innerHTML = `
+        <input type="text" placeholder="ชื่อค่าใช้จ่าย" value="${name}">
+        <input type="number" placeholder="จำนวนเงิน" value="${amount}">
+        <input type="date" value="${dueDate}">
+        <label>
+          <input type="checkbox" onchange="markPaid(this)" ${paidInfo ? "checked" : ""}> ✅ จ่ายแล้ว
+        </label>
+        <span class="paid-info">${paidInfo}</span>
+        <button onclick="this.parentElement.remove(); saveData();">❌ ลบ</button>
+      `;
+      document.getElementById("expenses").appendChild(div);
+    }
 
     function markPaid(checkbox) {
       const info = checkbox.parentElement.nextElementSibling;
@@ -135,43 +159,43 @@
     }
 
     function generateReport() {
-  const salary = parseFloat(document.getElementById("salary").value) || 0;
-  const salaryMonth = document.getElementById("salaryMonth").value || "-";
-  let totalExpenses = 0;
-  const expenseItems = document.querySelectorAll(".expense");
+      const salary = parseFloat(document.getElementById("salary").value) || 0;
+      const salaryMonth = document.getElementById("salaryMonth").value || "-";
+      let totalExpenses = 0;
+      const expenseItems = document.querySelectorAll(".expense");
 
-  let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
-  reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
-  reportText += `<table>
-    <tr>
-      <th>ชื่อค่าใช้จ่าย</th>
-      <th>จำนวนเงิน</th>
-      <th>วันครบกำหนด</th>
-      <th>สถานะ</th>
-    </tr>`;
+      let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
+      reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
+      reportText += `<table>
+        <tr>
+          <th>ชื่อค่าใช้จ่าย</th>
+          <th>จำนวนเงิน</th>
+          <th>วันครบกำหนด</th>
+          <th>สถานะ</th>
+        </tr>`;
 
-  expenseItems.forEach(exp => {
-    const name = exp.children[0].value || "ไม่ระบุ";
-    const amount = parseFloat(exp.children[1].value) || 0;   // ✅ ตรวจสอบให้เป็นตัวเลข
-    const dueDate = exp.children[2].value || "-";
-    const paidInfo = exp.children[4].textContent;
-    totalExpenses += amount;   // ✅ บวกค่าใช้จ่ายรวม
+      expenseItems.forEach(exp => {
+        const name = exp.children[0].value || "ไม่ระบุ";
+        const amount = parseFloat(exp.children[1].value) || 0;
+        const dueDate = exp.children[2].value || "-";
+        const paidInfo = exp.children[4].textContent;
+        totalExpenses += amount;
 
-    reportText += `<tr>
-      <td>${name}</td>
-      <td>${amount} บาท</td>
-      <td>${dueDate}</td>
-      <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
-    </tr>`;
-  });
+        reportText += `<tr>
+          <td>${name}</td>
+          <td>${amount} บาท</td>
+          <td>${dueDate}</td>
+          <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
+        </tr>`;
+      });
 
-  reportText += `</table>`;
-  reportText += `<p>📉 รวมค่าใช้จ่าย: <b>${totalExpenses}</b> บาท</p>`;
-  reportText += `<p>✅ คงเหลือสุทธิ: <b>${salary - totalExpenses}</b> บาท</p>`;
-  document.getElementById("report").innerHTML = reportText;
+      reportText += `</table>`;
+      reportText += `<p>📉 รวมค่าใช้จ่าย: <b>${totalExpenses}</b> บาท</p>`;
+      reportText += `<p>✅ คงเหลือสุทธิ: <b>${salary - totalExpenses}</b> บาท</p>`;
+      document.getElementById("report").innerHTML = reportText;
 
-  saveData();
-}
+      saveData();
+    }
 
     async function exportImage() {
       const report = document.getElementById("report");
@@ -193,7 +217,7 @@
       pdf.save("report.pdf");
     }
 
-    function notifyExpenses() {
+        function notifyExpenses() {
       const expenseItems = document.querySelectorAll(".expense");
       const today = new Date().toISOString().split("T")[0];
       let dueList = [];
@@ -202,7 +226,7 @@
         const name = exp.children[0].value || "ไม่ระบุ";
         const dueDate = exp.children[2].value;
         const paidInfo = exp.children[4].textContent;
-        if (dueDate === today && paidInfo === "") {
+        if (dueDate === today && (!paidInfo || paidInfo.trim() === "")) {
           dueList.push(name);
         }
       });
@@ -230,6 +254,6 @@
       });
       localStorage.setItem("expenses", JSON.stringify(expenses));
     }
-  </script> 
+  </script>
 </body>
 </html>
