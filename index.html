@@ -34,7 +34,7 @@
       line-height: 1.55;
       font-variant-numeric: tabular-nums;
     }
-    .wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 64px; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 96px; }
 
     /* ---------- header ---------- */
     .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -148,7 +148,7 @@
     #report .totals b { font-size: 18px; }
 
     @media (max-width: 600px) {
-      .wrap { padding: 14px 12px 56px; }
+      .wrap { padding: 14px 12px 92px; }
       .summary { padding: 18px 16px; border-radius: 16px; }
       .stats { gap: 8px; }
       .stat .v { font-size: 15px; }
@@ -156,6 +156,26 @@
       .fields .name { grid-column: 1 / -1; }
       #report { overflow-x: auto; padding: 14px; }
     }
+    /* ---------- calculator ---------- */
+    .calc-fab { position: fixed; right: 16px; bottom: 16px; width: 54px; height: 54px; border-radius: 50%; border: 0; background: var(--teal); color: #fff; cursor: pointer; display: grid; place-items: center; box-shadow: 0 4px 14px rgba(14,75,68,.35); z-index: 20; margin: 0; padding: 0; }
+    .calc-fab:hover { background: #0A3A35; }
+    .calc { position: fixed; right: 16px; bottom: 82px; width: min(320px, calc(100vw - 24px)); background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 12px; box-shadow: 0 10px 30px rgba(20,33,31,.22); z-index: 21; }
+    .calc[hidden] { display: none; }
+    .calc:focus { outline: none; }
+    .calc-head { display: flex; align-items: center; justify-content: space-between; font-weight: 600; padding: 0 2px 8px; }
+    .calc-screen { background: var(--teal-soft); border-radius: 12px; padding: 10px 14px; text-align: right; margin-bottom: 10px; min-height: 76px; overflow: hidden; }
+    .calc-expr { color: var(--muted); font-size: 14px; min-height: 21px; word-break: break-all; }
+    .calc-res { font-family: 'Noto Serif Thai', serif; font-weight: 700; font-size: 30px; line-height: 1.3; word-break: break-all; }
+    .calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .ck { font: inherit; font-size: 18px; font-weight: 500; padding: 12px 0; border-radius: 12px; border: 1px solid var(--line); background: #fff; color: var(--ink); cursor: pointer; margin: 0; }
+    .ck:hover { background: var(--teal-soft); }
+    .ck.op { background: var(--teal-soft); color: var(--teal); }
+    .ck.eq { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .ck.eq:hover { background: #0A3A35; }
+    .ck.wide { grid-column: span 2; }
+    .calc-fill { width: 100%; margin: 10px 0 0; padding: 12px; font: inherit; font-weight: 600; border-radius: 12px; border: 1.5px solid var(--teal); background: #fff; color: var(--teal); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .calc-fill:hover:not(:disabled) { background: var(--teal); color: #fff; }
+    .calc-fill:disabled { border-color: var(--line); color: var(--muted); cursor: default; }
     @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -217,6 +237,39 @@
       <button class="btn danger" onclick="clearAll()">ล้างข้อมูลทุกเดือน</button>
     </div>
     <input type="file" id="importFile" accept="application/json,.json" hidden onchange="importBackup(this)">
+  </div>
+
+  <button class="calc-fab" id="calcFab" onclick="toggleCalc()" aria-label="เครื่องคิดเลข" aria-expanded="false" aria-controls="calc">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5"/><path d="M8.5 7h7"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></svg>
+  </button>
+  <div class="calc" id="calc" role="dialog" aria-label="เครื่องคิดเลข" tabindex="-1" hidden>
+    <div class="calc-head"><span>เครื่องคิดเลข</span><button class="icon-btn" onclick="toggleCalc()" aria-label="ปิดเครื่องคิดเลข">✕</button></div>
+    <div class="calc-screen" aria-live="polite">
+      <div class="calc-expr" id="calcExpr"></div>
+      <div class="calc-res" id="calcRes">0</div>
+    </div>
+    <div class="calc-keys">
+      <button class="ck op" onclick="calcPress('C')">C</button>
+      <button class="ck op" onclick="calcPress('⌫')" aria-label="ลบตัวสุดท้าย">⌫</button>
+      <button class="ck op" onclick="calcPress('%')">%</button>
+      <button class="ck op" onclick="calcPress('÷')" aria-label="หาร">÷</button>
+      <button class="ck" onclick="calcPress('7')">7</button>
+      <button class="ck" onclick="calcPress('8')">8</button>
+      <button class="ck" onclick="calcPress('9')">9</button>
+      <button class="ck op" onclick="calcPress('×')" aria-label="คูณ">×</button>
+      <button class="ck" onclick="calcPress('4')">4</button>
+      <button class="ck" onclick="calcPress('5')">5</button>
+      <button class="ck" onclick="calcPress('6')">6</button>
+      <button class="ck op" onclick="calcPress('−')" aria-label="ลบ">−</button>
+      <button class="ck" onclick="calcPress('1')">1</button>
+      <button class="ck" onclick="calcPress('2')">2</button>
+      <button class="ck" onclick="calcPress('3')">3</button>
+      <button class="ck op" onclick="calcPress('+')" aria-label="บวก">+</button>
+      <button class="ck wide" onclick="calcPress('0')">0</button>
+      <button class="ck" onclick="calcPress('.')" aria-label="จุดทศนิยม">.</button>
+      <button class="ck eq" onclick="calcPress('=')" aria-label="เท่ากับ">=</button>
+    </div>
+    <button class="calc-fill" id="calcFill" onclick="calcFill()" disabled>แตะช่องจำนวนเงินก่อน</button>
   </div>
 
   <script>
@@ -565,6 +618,164 @@
       }
       pdf.save("report-" + activeMonth + ".pdf");
     }
+
+    /* ---------- calculator ---------- */
+    let calcExpr = "";
+    let calcDone = false;
+    let calcTarget = null;
+
+    // คำนวณนิพจน์แบบปลอดภัย (ไม่ใช้ eval) รองรับ + − × ÷ % และลำดับความสำคัญของเครื่องหมาย
+    function calcEval(s) {
+      if (!s) return null;
+      let i = 0, pctFlag = false, termPure = false;
+      const peek = () => s[i];
+      function number() {
+        const j = i;
+        while (i < s.length && /[0-9.]/.test(s[i])) i++;
+        if (j === i) throw new Error("num");
+        const n = parseFloat(s.slice(j, i));
+        if (isNaN(n)) throw new Error("num");
+        return n;
+      }
+      function unary() {
+        if (peek() === "−") { i++; return -unary(); }
+        let n = number();
+        pctFlag = false;
+        while (peek() === "%") { i++; n /= 100; pctFlag = true; }
+        return n;
+      }
+      function term() {
+        let v = unary();
+        let pure = pctFlag;
+        while (peek() === "×" || peek() === "÷") {
+          const op = s[i++];
+          const r = unary();
+          if (op === "×") v *= r;
+          else { if (r === 0) throw new Error("div0"); v /= r; }
+          pure = false;
+        }
+        termPure = pure;
+        return v;
+      }
+      function expr() {
+        let v = term();
+        while (peek() === "+" || peek() === "−") {
+          const op = s[i++];
+          let r = term();
+          if (termPure) r = v * r;        // 200 + 10% = 220
+          v = op === "+" ? v + r : v - r;
+        }
+        return v;
+      }
+      try {
+        const v = expr();
+        if (i !== s.length) return null;
+        return isFinite(v) ? v : null;
+      } catch (e) { return null; }
+    }
+
+    function calcClean() { return calcExpr.replace(/[+−×÷]$/, ""); }
+    function calcFmt(n) { return Number(n).toLocaleString("th-TH", { maximumFractionDigits: 6 }); }
+
+    function renderCalc() {
+      const v = calcEval(calcClean());
+      document.getElementById("calcExpr").textContent = calcExpr;
+      document.getElementById("calcRes").textContent = v !== null ? calcFmt(v) : "0";
+    }
+
+    function calcPress(k) {
+      const ops = "+−×÷";
+      if (k === "C") {
+        calcExpr = ""; calcDone = false;
+      } else if (k === "⌫") {
+        calcExpr = calcExpr.slice(0, -1); calcDone = false;
+      } else if (k === "=") {
+        const v = calcEval(calcClean());
+        if (v !== null) { calcExpr = String(Math.round(v * 1e6) / 1e6); calcDone = true; }
+      } else if (ops.includes(k)) {
+        calcDone = false;
+        if (!calcExpr) { if (k === "−") calcExpr = "−"; }
+        else if (ops.includes(calcExpr.slice(-1))) {
+          if (calcExpr.length > 1 || k === "−") calcExpr = calcExpr.slice(0, -1) + k;
+        } else if (calcExpr !== "−") calcExpr += k;
+      } else if (k === "%") {
+        if (/[0-9%]$/.test(calcExpr)) calcExpr += "%";
+        calcDone = false;
+      } else if (k === ".") {
+        if (calcDone) { calcExpr = "0."; calcDone = false; }
+        else {
+          const seg = calcExpr.split(/[+−×÷%]/).pop();
+          if (!seg) calcExpr += "0.";
+          else if (!seg.includes(".")) calcExpr += ".";
+        }
+      } else if (/^[0-9]$/.test(k)) {
+        if (calcDone) { calcExpr = k; calcDone = false; }
+        else if (!/%$/.test(calcExpr)) calcExpr += k;
+      }
+      renderCalc();
+    }
+
+    function updateCalcTarget() {
+      const b = document.getElementById("calcFill");
+      if (calcTarget && document.body.contains(calcTarget)) {
+        const label = calcTarget.id === "salary"
+          ? "เงินเดือน"
+          : (calcTarget.closest(".expense").querySelector(".name").value || "รายการที่ยังไม่มีชื่อ");
+        b.textContent = "ใส่ในช่อง: " + label;
+        b.disabled = false;
+      } else {
+        b.textContent = "แตะช่องจำนวนเงินก่อน";
+        b.disabled = true;
+      }
+    }
+
+    function calcFill() {
+      const b = document.getElementById("calcFill");
+      const v = calcEval(calcClean());
+      if (v === null || !calcTarget || !document.body.contains(calcTarget)) return;
+      if (v < 0) {
+        b.textContent = "ใส่ค่าติดลบไม่ได้";
+        setTimeout(updateCalcTarget, 1500);
+        return;
+      }
+      calcTarget.value = Math.round(v * 100) / 100;
+      calcTarget.dispatchEvent(new Event("input", { bubbles: true }));
+      b.textContent = "ใส่แล้ว";
+      setTimeout(updateCalcTarget, 1200);
+    }
+
+    function toggleCalc() {
+      const panel = document.getElementById("calc");
+      const fab = document.getElementById("calcFab");
+      const open = panel.hidden;
+      panel.hidden = !open;
+      fab.setAttribute("aria-expanded", String(open));
+      if (open) { updateCalcTarget(); renderCalc(); panel.focus(); }
+      else fab.focus();
+    }
+
+    document.addEventListener("focusin", e => {
+      const t = e.target;
+      if (t.matches && t.matches("input.amt, #salary")) { calcTarget = t; updateCalcTarget(); }
+    });
+
+    document.getElementById("calc").addEventListener("keydown", e => {
+      const k = e.key;
+      if (k === "Escape") { toggleCalc(); return; }
+      if (k === "Enter" && e.target.tagName === "BUTTON") return;
+      let press = null;
+      if (/^[0-9]$/.test(k)) press = k;
+      else if (k === "." || k === ",") press = ".";
+      else if (k === "+") press = "+";
+      else if (k === "-") press = "−";
+      else if (k === "*" || k === "x" || k === "X") press = "×";
+      else if (k === "/") press = "÷";
+      else if (k === "%") press = "%";
+      else if (k === "Enter" || k === "=") press = "=";
+      else if (k === "Backspace") press = "⌫";
+      else if (k === "Delete" || k === "c" || k === "C") press = "C";
+      if (press) { e.preventDefault(); calcPress(press); }
+    });
 
     /* ---------- backup / restore / clear ---------- */
     function exportBackup() {
