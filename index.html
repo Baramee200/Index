@@ -2,191 +2,430 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>💼 ระบบบริหารเงินเดือน</title>
+  <title>บริหารเงินเดือน</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --paper: #EDF1EE;
+      --surface: #FFFFFF;
+      --ink: #14211F;
+      --muted: #5B6C68;
+      --line: #D6DEDA;
+      --teal: #0E4B44;
+      --teal-soft: #E3F0EC;
+      --paid: #7FD6C0;
+      --due: #F2B544;
+      --warn: #8A5A0E;
+      --warn-soft: #FFF1D6;
+      --danger: #C4352B;
+      --danger-soft: #FBEAE8;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: #f5f7fa;
-      color: #333;
-      margin: 20px;
+      margin: 0;
+      font-family: 'IBM Plex Sans Thai', 'Segoe UI', Tahoma, sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.55;
+      font-variant-numeric: tabular-nums;
     }
-    h1 {
-      color: #0066cc;
-      text-align: center;
-    }
-    h2 {
-      color: #ff6600;
-    }
-    input {
-      padding: 6px;
-      margin: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    .category {
-      margin-bottom: 15px;
-      background: #e9f5ff;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .expense {
-      margin: 8px 0;
-      background: #fff;
-      padding: 8px;
-      border-radius: 5px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    button {
-      margin: 5px;
-      padding: 6px 12px;
-      background: linear-gradient(45deg, #00c3ff, #0066cc);
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 5px;
-      font-weight: bold;
-      font-size: 14px;
-    }
-    button:hover {
-      background: linear-gradient(45deg, #ffcc00, #ff6600);
-    }
-    #report {
-      margin-top: 20px;
-      padding: 15px;
-      background: #fff;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    table th, table td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: center;
-    }
-    table th {
-      background: #0066cc;
-      color: white;
-    }
-    table tr:nth-child(even) {
-      background: #f9f9f9;
-    }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 20px 16px 64px; }
 
-    /* Responsive สำหรับมือถือ */
-    @media (max-width: 600px) {
-      body {
-        margin: 10px;
-        font-size: 14px;
-      }
-      h1 {
-        font-size: 20px;
-      }
-      input, button {
-        width: auto;       /* ปรับจาก 100% เป็น auto */
-        font-size: 13px;   /* ลดขนาดตัวอักษร */
-        padding: 5px 10px; /* ลด padding ให้ปุ่มเล็กลง */
-      }
-      table {
-        font-size: 12px;
-        display: block;
-        overflow-x: auto;
-      }
-      .expense {
-        display: block;
-        margin-bottom: 15px;
-      }
+    /* ---------- header ---------- */
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .top h1 { font-family: 'Noto Serif Thai', serif; font-size: 22px; margin: 0; }
+    .month-field { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+    .month-field input { margin: 0; }
+
+    /* ---------- summary ---------- */
+    .summary { background: var(--teal); color: #fff; border-radius: 20px; padding: 22px 22px 20px; }
+    .summary .label { font-size: 14px; color: rgba(255,255,255,.75); }
+    .summary .big {
+      font-family: 'Noto Serif Thai', serif; font-weight: 700;
+      font-size: clamp(36px, 9vw, 52px); line-height: 1.2; margin: 2px 0 14px;
     }
+    .summary .big small { font-family: 'IBM Plex Sans Thai', sans-serif; font-size: 16px; font-weight: 400; margin-left: 6px; color: rgba(255,255,255,.75); }
+    .summary.over .big { color: #FFB8AD; }
+    .bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.16); }
+    .bar span { display: block; height: 100%; transition: width .25s ease; }
+    .bar .b-paid { background: var(--paid); }
+    .bar .b-due { background: var(--due); }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .stat .k { font-size: 13px; color: rgba(255,255,255,.75); display: flex; align-items: center; gap: 6px; }
+    .stat .v { font-weight: 600; font-size: 17px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot.paid { background: var(--paid); }
+    .dot.due { background: var(--due); }
+    .dot.base { background: rgba(255,255,255,.5); }
+    #salary {
+      background: transparent; color: #fff; border: 0; border-bottom: 1px dashed rgba(255,255,255,.5);
+      border-radius: 0; padding: 0 0 2px; margin: 0; width: 100%; font: inherit; font-weight: 600; font-size: 17px;
+    }
+    #salary:focus-visible { outline: 2px solid var(--paid); outline-offset: 3px; }
+
+    /* ---------- due alerts ---------- */
+    .alerts { margin-top: 12px; display: grid; gap: 8px; }
+    .alerts:empty { display: none; }
+    .alert-line { padding: 10px 14px; border-radius: 10px; font-size: 14px; border-left: 4px solid; }
+    .alert-line.late { background: var(--danger-soft); border-color: var(--danger); color: #7D1F18; }
+    .alert-line.soon { background: var(--warn-soft); border-color: var(--due); color: var(--warn); }
+
+    /* ---------- inputs ---------- */
+    input[type=text], input[type=number], input[type=date], input[type=month] {
+      font: inherit; color: var(--ink); padding: 8px 10px; margin: 0;
+      border: 1px solid var(--line); border-radius: 9px; background: #fff; min-width: 0;
+    }
+    input:focus-visible, button:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+    /* ---------- categories ---------- */
+    .section-title { margin: 28px 0 10px; font-size: 16px; font-weight: 600; }
+    .category { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+    .cat-head { display: flex; align-items: center; gap: 6px; padding: 10px 10px 10px 6px; background: var(--teal-soft); }
+    .chev { background: none; border: 0; padding: 8px; margin: 0; cursor: pointer; color: var(--teal); display: grid; place-items: center; border-radius: 8px; }
+    .chev svg { transition: transform .15s ease; }
+    .category.collapsed .chev svg { transform: rotate(-90deg); }
+    .cat-name { flex: 1; font-weight: 600; font-size: 16px; background: transparent; border-color: transparent; }
+    .cat-name:hover { border-color: var(--line); background: #fff; }
+    .cat-total { font-weight: 600; font-size: 15px; white-space: nowrap; color: var(--teal); }
+    .icon-btn { background: none; border: 0; cursor: pointer; color: var(--muted); width: 34px; height: 34px; border-radius: 8px; font-size: 15px; line-height: 1; padding: 0; }
+    .icon-btn:hover { background: var(--danger-soft); color: var(--danger); }
+    .category.collapsed .cat-body { display: none; }
+
+    .expense { display: grid; grid-template-columns: auto 1fr auto; column-gap: 10px; align-items: start; padding: 12px 10px 12px 14px; border-top: 1px solid var(--line); }
+    .expense:first-child { border-top: 0; }
+    .fields { display: grid; grid-template-columns: 1fr 120px 150px; gap: 8px; }
+    .row-note { grid-column: 2; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+    .row-note:empty, .paid-info:empty { display: none; }
+    .badge { font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 99px; }
+    .badge:empty { display: none; }
+    .is-overdue .badge { background: var(--danger-soft); color: var(--danger); }
+    .is-today .badge { background: var(--warn-soft); color: var(--warn); }
+    .is-paid .fields input[type=text], .is-paid .fields input[type=number] { color: var(--muted); text-decoration: line-through; }
+    .is-overdue .due { border-color: var(--danger); }
+
+    .check { position: relative; display: block; width: 34px; height: 36px; cursor: pointer; }
+    .check input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+    .check .box { position: absolute; left: 6px; top: 8px; width: 22px; height: 22px; border: 2px solid #9AABA6; border-radius: 50%; background: #fff; display: grid; place-items: center; transition: background .12s, border-color .12s; }
+    .check .box::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) translate(-1px,-1px); opacity: 0; }
+    .check input:checked + .box { background: var(--teal); border-color: var(--teal); }
+    .check input:checked + .box::after { opacity: 1; }
+    .check input:focus-visible + .box { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+    .cat-foot { border-top: 1px solid var(--line); padding: 4px 8px; }
+    .text-btn { background: none; border: 0; color: var(--teal); font: inherit; font-weight: 500; padding: 8px; cursor: pointer; border-radius: 8px; margin: 0; }
+    .text-btn:hover { background: var(--teal-soft); }
+
+    .empty { border: 1.5px dashed #A9B9B4; border-radius: var(--radius); padding: 22px 18px; color: var(--muted); text-align: center; margin-bottom: 12px; }
+    .empty .btn { margin-top: 12px; }
+    .add-cat { width: 100%; padding: 14px; font: inherit; font-weight: 600; cursor: pointer; background: transparent; color: var(--teal); border: 1.5px solid var(--teal); border-radius: var(--radius); }
+    .add-cat:hover { background: var(--teal); color: #fff; }
+
+    /* ---------- actions & report ---------- */
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn { font: inherit; font-weight: 500; padding: 10px 16px; border-radius: 10px; cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--ink); margin: 0; }
+    .btn:hover { border-color: var(--teal); }
+    .btn.primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+    .btn.primary:hover { background: #0A3A35; }
+    .btn.danger { color: var(--danger); }
+    .btn.danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+    .data-note { margin: 0 0 10px; color: var(--muted); font-size: 14px; }
+
+    #report:empty { display: none; }
+    #report { margin-top: 16px; padding: 20px; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); }
+    #report h3 { font-family: 'Noto Serif Thai', serif; margin: 0 0 4px; font-size: 20px; }
+    #report p { margin: 4px 0; }
+    #report table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+    #report th, #report td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); }
+    #report th { background: var(--teal); color: #fff; font-weight: 500; }
+    #report td.num, #report th.num { text-align: right; }
+    #report tr.cat-row td { background: var(--teal-soft); font-weight: 600; }
+    #report .totals { margin-top: 8px; display: grid; gap: 2px; }
+    #report .totals b { font-size: 18px; }
+
+    @media (max-width: 600px) {
+      .wrap { padding: 14px 12px 56px; }
+      .summary { padding: 18px 16px; border-radius: 16px; }
+      .stats { gap: 8px; }
+      .stat .v { font-size: 15px; }
+      .fields { grid-template-columns: 1fr 1fr; }
+      .fields .name { grid-column: 1 / -1; }
+      #report { overflow-x: auto; padding: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <h1>💼 ระบบบริหารเงินเดือน</h1>
+  <div class="wrap">
+    <div class="top">
+      <h1>บริหารเงินเดือน</h1>
+      <label class="month-field">เดือน
+        <input type="month" id="salaryMonth" onchange="switchMonth(this.value)">
+      </label>
+    </div>
 
-  <label>💰 เงินเดือน (บาท): </label>
-  <input type="number" id="salary" value="30000">
-  <label>📅 เดือน/ปี: </label>
-  <input type="month" id="salaryMonth" value="2026-03"><br><br>
+    <section class="summary" id="summary" aria-live="polite">
+      <div class="label" id="remainLabel">คงเหลือหลังจ่ายครบทุกรายการ</div>
+      <div class="big"><span id="remain">0</span><small>บาท</small></div>
+      <div class="bar" aria-hidden="true">
+        <span class="b-paid" id="barPaid" style="width:0"></span>
+        <span class="b-due" id="barDue" style="width:0"></span>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <div class="k"><i class="dot base"></i>เงินเดือน</div>
+          <input type="number" id="salary" inputmode="decimal" min="0" value="30000" aria-label="เงินเดือน (บาท)">
+        </div>
+        <div class="stat">
+          <div class="k"><i class="dot paid"></i>จ่ายแล้ว</div>
+          <div class="v" id="sumPaid">0</div>
+        </div>
+        <div class="stat">
+          <div class="k"><i class="dot due"></i>ยังไม่จ่าย</div>
+          <div class="v" id="sumDue">0</div>
+        </div>
+      </div>
+    </section>
 
-  <h2>📌 เพิ่มรายการที่่ต้องจ่าย</h2>
-  <div id="expenses"></div>
-  <button onclick="addCategory()">➕ เพิ่มรายการที่่ต้องจ่าย</button>
+    <div class="alerts" id="alerts"></div>
 
-  <br><br>
-  <button onclick="generateReport()">📊 ออกรายงานรายเดือน</button>
-  <button onclick="exportImage()">🖼️ Export เป็นรูปภาพ</button>
-  <button onclick="exportPDF()">📄 Export เป็น PDF</button>
-  <button onclick="clearData()">🗑️ ล้างข้อมูลทั้งหมด</button>
+    <h2 class="section-title">รายการที่ต้องจ่าย</h2>
+    <div class="empty" id="emptyHint"></div>
+    <div id="expenses"></div>
+    <button class="add-cat" onclick="newCategory()">เพิ่มหมวดค่าใช้จ่าย</button>
 
-  <div id="report"></div>
+    <h2 class="section-title">รายงาน</h2>
+    <div class="actions">
+      <button class="btn primary" onclick="generateReport()">ออกรายงานรายเดือน</button>
+      <button class="btn" onclick="exportImage()">บันทึกเป็นรูปภาพ</button>
+      <button class="btn" onclick="exportPDF()">บันทึกเป็น PDF</button>
+    </div>
+    <div id="report"></div>
+
+    <h2 class="section-title">จัดการข้อมูล</h2>
+    <p class="data-note">ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ดาวน์โหลดไฟล์สำรองไว้ก่อนเปลี่ยนเครื่องหรือล้างประวัติเบราว์เซอร์</p>
+    <div class="actions">
+      <button class="btn" onclick="exportBackup()">ดาวน์โหลดไฟล์สำรอง</button>
+      <button class="btn" onclick="document.getElementById('importFile').click()">นำเข้าจากไฟล์สำรอง</button>
+      <button class="btn danger" onclick="clearMonth()">ล้างข้อมูลเดือนนี้</button>
+      <button class="btn danger" onclick="clearAll()">ล้างข้อมูลทุกเดือน</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" hidden onchange="importBackup(this)">
+  </div>
 
   <script>
-    window.onload = function() {
-      const savedSalary = localStorage.getItem("salary");
-      if (savedSalary) document.getElementById("salary").value = savedSalary;
+    /* ---------- helpers ---------- */
+    const KEY = "budget_v2";
+    let store = { months: {}, current: "" };
+    let activeMonth = "";
 
-      const savedMonth = localStorage.getItem("salaryMonth");
-      if (savedMonth) document.getElementById("salaryMonth").value = savedMonth;
+    function esc(v) {
+      return String(v ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    function safeRemove(k) { try { localStorage.removeItem(k); } catch (e) {} }
+    function fmt(n) { return Number(n || 0).toLocaleString("th-TH", { maximumFractionDigits: 2 }); }
+    function pad(n) { return String(n).padStart(2, "0"); }
+    function todayStr() {
+      const d = new Date();
+      return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+    }
+    function dayDiff(a, b) { // b - a เป็นจำนวนวัน
+      return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 864e5);
+    }
+    function thaiDate(s) {
+      if (!s) return "-";
+      const [y, m, d] = s.split("-").map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString("th-TH", { day: "numeric", month: "short", year: "numeric" });
+    }
+    function thaiMonth(s) {
+      if (!s) return "-";
+      const [y, m] = s.split("-").map(Number);
+      return new Date(y, m - 1, 1).toLocaleDateString("th-TH", { month: "long", year: "numeric" });
+    }
+    const salaryEl = () => document.getElementById("salary");
+    const monthEl = () => document.getElementById("salaryMonth");
 
-      const savedCategories = JSON.parse(localStorage.getItem("categories") || "[]");
-      savedCategories.forEach(cat => {
-        addCategory(cat.name);
-        const lastCat = document.querySelector(".category:last-child");
-        cat.subExpenses.forEach(exp => addSubExpense(lastCat.querySelector(".toggle-btn"), exp.name, exp.amount, exp.dueDate, exp.paidInfo));
+    /* ---------- storage ---------- */
+    function persist() {
+      store.current = activeMonth;
+      safeSet(KEY, JSON.stringify(store));
+    }
+
+    function loadStore() {
+      try {
+        const s = JSON.parse(safeGet(KEY));
+        if (s && typeof s.months === "object" && s.months) return s;
+      } catch (e) {}
+      return null;
+    }
+
+    // ย้ายข้อมูลรุ่นเก่า (เก็บเดือนเดียว) เข้ารูปแบบรายเดือน โดยไม่ลบของเดิม
+    function migrateLegacy() {
+      let cats = [];
+      try { cats = JSON.parse(safeGet("categories") || "[]"); } catch (e) {}
+      const month = safeGet("salaryMonth") || todayStr().slice(0, 7);
+      const s = { months: {}, current: month };
+      if (cats.length || safeGet("salary")) {
+        s.months[month] = { salary: safeGet("salary") || "", categories: cats };
+      }
+      return s;
+    }
+
+    function readCategories() {
+      const data = [];
+      document.querySelectorAll(".category").forEach(cat => {
+        const subExpenses = [];
+        cat.querySelectorAll(".expense").forEach(exp => {
+          subExpenses.push({
+            name: exp.querySelector(".name").value,
+            amount: exp.querySelector(".amt").value,
+            dueDate: exp.querySelector(".due").value,
+            paidInfo: exp.querySelector(".paid-info").textContent
+          });
+        });
+        data.push({ name: cat.querySelector(".cat-name").value, subExpenses });
       });
+      return data;
+    }
 
-      notifyExpenses();
+    function saveData() {
+      if (!activeMonth) return;
+      store.months[activeMonth] = { salary: salaryEl().value, categories: readCategories() };
+      persist();
+      updateSummary();
+    }
+
+    function render(d) {
+      document.getElementById("expenses").innerHTML = "";
+      document.getElementById("report").innerHTML = "";
+      salaryEl().value = d.salary ?? "";
+      (d.categories || []).forEach(cat => {
+        const c = addCategory(cat.name);
+        (cat.subExpenses || []).forEach(e => addExpense(c, e.name, e.amount, e.dueDate, e.paidInfo));
+      });
+      updateSummary();
+    }
+
+    /* ---------- load ---------- */
+    window.onload = function () {
+      store = loadStore() || migrateLegacy();
+      activeMonth = store.current || todayStr().slice(0, 7);
+      monthEl().value = activeMonth;
+      render(store.months[activeMonth] || { salary: salaryEl().value, categories: [] });
+      persist();
+      document.addEventListener("input", saveData);
+      document.addEventListener("change", saveData);
     };
 
-    function addCategory(name="") {
+    /* ---------- months ---------- */
+    function switchMonth(m) {
+      if (!m) { monthEl().value = activeMonth; return; }
+      const carrySalary = salaryEl().value;
+      activeMonth = m;
+      render(store.months[m] || { salary: carrySalary, categories: [] });
+      persist();
+    }
+
+    function prevMonthWithData() {
+      return Object.keys(store.months)
+        .filter(k => k < activeMonth && (store.months[k].categories || []).length)
+        .sort().pop();
+    }
+
+    function copyFromPrevious() {
+      const p = prevMonthWithData();
+      if (!p) return;
+      const [y, m] = activeMonth.split("-").map(Number);
+      const dim = new Date(y, m, 0).getDate();
+      store.months[p].categories.forEach(cat => {
+        const c = addCategory(cat.name);
+        (cat.subExpenses || []).forEach(e => {
+          let due = "";
+          if (e.dueDate) {
+            const day = Math.min(Number(e.dueDate.split("-")[2]) || 1, dim);
+            due = y + "-" + pad(m) + "-" + pad(day);
+          }
+          addExpense(c, e.name, e.amount, due, "");
+        });
+      });
+      saveData();
+    }
+
+    /* ---------- categories & rows ---------- */
+    function addCategory(name = "") {
       const div = document.createElement("div");
       div.className = "category";
       div.innerHTML = `
-        <input type="text" class="cat-name" placeholder="ชื่อหมวดค่าใช้จ่าย" value="${name}">
-        <button class="toggle-btn" onclick="toggleSubExpenses(this)">▶ พับ/ขยาย</button>
-        <div class="sub-expenses"></div>
-        <button onclick="addSubExpense(this)">➕ เพิ่มกล่องย่อย</button>
-        <button onclick="this.parentElement.remove(); saveData();">❌ ลบหมวด</button>
-      `;
+        <div class="cat-head">
+          <button class="chev" onclick="toggleCategory(this)" aria-label="พับหรือขยายหมวด" aria-expanded="true">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg>
+          </button>
+          <input type="text" class="cat-name" placeholder="ชื่อหมวด เช่น ที่พัก" value="${esc(name)}" aria-label="ชื่อหมวด">
+          <span class="cat-total">0 บาท</span>
+          <button class="icon-btn" onclick="removeCategory(this)" aria-label="ลบหมวด">✕</button>
+        </div>
+        <div class="cat-body">
+          <div class="sub-expenses"></div>
+          <div class="cat-foot"><button class="text-btn" onclick="addExpense(this); saveData();">เพิ่มรายการ</button></div>
+        </div>`;
       document.getElementById("expenses").appendChild(div);
+      return div;
     }
 
-    function toggleSubExpenses(button) {
-      const container = button.nextElementSibling;
-      if (container.style.display === "none") {
-        container.style.display = "block";
-        button.textContent = "▼ พับ/ขยาย";
-      } else {
-        container.style.display = "none";
-        button.textContent = "▶ พับ/ขยาย";
-      }
+    function newCategory() {
+      const c = addCategory();
+      c.querySelector(".cat-name").focus();
+      saveData();
     }
 
-    function addSubExpense(button, name="", amount="", dueDate="", paidInfo="") {
-      const container = button.previousElementSibling;
+    function toggleCategory(btn) {
+      const cat = btn.closest(".category");
+      cat.classList.toggle("collapsed");
+      btn.setAttribute("aria-expanded", String(!cat.classList.contains("collapsed")));
+    }
+
+    function removeCategory(btn) {
+      const cat = btn.closest(".category");
+      if (cat.querySelector(".expense") && !confirm("ลบหมวดนี้พร้อมรายการทั้งหมดในหมวดใช่หรือไม่?")) return;
+      cat.remove();
+      saveData();
+    }
+
+    function addExpense(el, name = "", amount = "", dueDate = "", paidInfo = "") {
+      const container = el.closest(".category").querySelector(".sub-expenses");
       const div = document.createElement("div");
       div.className = "expense";
       div.innerHTML = `
-        <input type="text" placeholder="ชื่อค่าใช้จ่ายย่อย" value="${name}">
-        <input type="number" placeholder="จำนวนเงิน" value="${amount}">
-        <input type="date" value="${dueDate}">
-        <label>
-          <input type="checkbox" onchange="markPaid(this)" ${paidInfo ? "checked" : ""}> ✅ จ่ายแล้ว
+        <label class="check">
+          <input type="checkbox" class="paid-check" onchange="markPaid(this)" ${paidInfo ? "checked" : ""} aria-label="จ่ายแล้ว">
+          <span class="box"></span>
         </label>
-        <span class="paid-info">${paidInfo}</span>
-        <button onclick="this.parentElement.remove(); saveData();">❌ ลบ</button>
-      `;
+        <div class="fields">
+          <input type="text" class="name" placeholder="ชื่อรายการ เช่น ค่าไฟ" value="${esc(name)}" aria-label="ชื่อรายการ">
+          <input type="number" class="amt" inputmode="decimal" min="0" placeholder="จำนวนเงิน" value="${esc(amount)}" aria-label="จำนวนเงิน">
+          <input type="date" class="due" value="${esc(dueDate)}" aria-label="วันครบกำหนด">
+        </div>
+        <button class="icon-btn" onclick="removeExpense(this)" aria-label="ลบรายการ">✕</button>
+        <div class="row-note"><span class="badge"></span><span class="paid-info">${esc(paidInfo)}</span></div>`;
       container.appendChild(div);
+      if (!el.classList.contains("category")) div.querySelector(".name").focus();
+    }
+
+    function removeExpense(btn) {
+      btn.closest(".expense").remove();
+      saveData();
     }
 
     function markPaid(checkbox) {
-      const info = checkbox.parentElement.nextElementSibling;
+      const info = checkbox.closest(".expense").querySelector(".paid-info");
       if (checkbox.checked) {
         const now = new Date();
         info.textContent = `จ่ายแล้วเมื่อ ${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
@@ -196,131 +435,185 @@
       saveData();
     }
 
+    /* ---------- summary & alerts ---------- */
+    function updateSummary() {
+      const salary = parseFloat(salaryEl().value) || 0;
+      const today = todayStr();
+      let paid = 0, unpaid = 0;
+      const late = [], soon = [];
+
+      document.querySelectorAll(".category").forEach(cat => {
+        let sub = 0;
+        cat.querySelectorAll(".expense").forEach(exp => {
+          const amt = parseFloat(exp.querySelector(".amt").value) || 0;
+          const isPaid = exp.querySelector(".paid-check").checked;
+          const due = exp.querySelector(".due").value;
+          const name = exp.querySelector(".name").value || "ไม่ระบุ";
+          sub += amt;
+          if (isPaid) paid += amt; else unpaid += amt;
+
+          const diff = due ? dayDiff(today, due) : null;
+          const overdue = !isPaid && diff !== null && diff < 0;
+          const dueToday = !isPaid && diff === 0;
+          if (overdue) late.push(name);
+          else if (!isPaid && diff !== null && diff <= 3) soon.push(name);
+
+          exp.classList.toggle("is-paid", isPaid);
+          exp.classList.toggle("is-overdue", overdue);
+          exp.classList.toggle("is-today", dueToday);
+          exp.querySelector(".badge").textContent = overdue ? "เลยกำหนดแล้ว" : dueToday ? "ครบกำหนดวันนี้" : "";
+        });
+        cat.querySelector(".cat-total").textContent = fmt(sub) + " บาท";
+      });
+
+      const total = paid + unpaid;
+      const remain = salary - total;
+      const base = Math.max(salary, total, 1);
+
+      document.getElementById("remain").textContent = fmt(remain);
+      document.getElementById("remainLabel").textContent = remain < 0 ? "ค่าใช้จ่ายเกินเงินเดือน" : "คงเหลือหลังจ่ายครบทุกรายการ";
+      document.getElementById("summary").classList.toggle("over", remain < 0);
+      document.getElementById("sumPaid").textContent = fmt(paid);
+      document.getElementById("sumDue").textContent = fmt(unpaid);
+      document.getElementById("barPaid").style.width = (paid / base * 100) + "%";
+      document.getElementById("barDue").style.width = (unpaid / base * 100) + "%";
+
+      let alertsHtml = "";
+      if (late.length) alertsHtml += `<div class="alert-line late">เลยกำหนดแล้ว ${late.length} รายการ: ${esc(late.join(", "))}</div>`;
+      if (soon.length) alertsHtml += `<div class="alert-line soon">ครบกำหนดภายใน 3 วัน ${soon.length} รายการ: ${esc(soon.join(", "))}</div>`;
+      document.getElementById("alerts").innerHTML = alertsHtml;
+
+      const hint = document.getElementById("emptyHint");
+      if (document.querySelector(".category")) {
+        hint.style.display = "none";
+      } else {
+        hint.style.display = "block";
+        const p = prevMonthWithData();
+        hint.innerHTML = p
+          ? `เดือนนี้ยังไม่มีรายการ<br><button class="btn" onclick="copyFromPrevious()">คัดลอกรายการจาก${esc(thaiMonth(p))}</button>`
+          : "ยังไม่มีรายการ เริ่มจากเพิ่มหมวด เช่น ที่พัก การเดินทาง หรือบัตรเครดิต";
+      }
+    }
+
+    /* ---------- report ---------- */
     function generateReport() {
-      const salary = parseFloat(document.getElementById("salary").value) || 0;
-      const salaryMonth = document.getElementById("salaryMonth").value || "-";
-      let totalExpenses = 0;
-      const categories = document.querySelectorAll(".category");
+      const salary = parseFloat(salaryEl().value) || 0;
+      let total = 0;
 
-      let reportText = `<h3>📊 รายงานเดือน ${salaryMonth}</h3>`;
-      reportText += `<p>💰 เงินเดือน: ${salary} บาท</p>`;
-      reportText += `<table>
-        <tr>
-          <th>ชื่อค่าใช้จ่าย</th>
-          <th>จำนวนเงิน</th>
-          <th>วันครบกำหนด</th>
-          <th>สถานะ</th>
-        </tr>`;
+      let html = `<h3>รายงานเดือน ${esc(thaiMonth(activeMonth))}</h3>`;
+      html += `<p>เงินเดือน: ${fmt(salary)} บาท</p>`;
+      html += `<table>
+        <tr><th>ชื่อค่าใช้จ่าย</th><th class="num">จำนวนเงิน</th><th>วันครบกำหนด</th><th>สถานะ</th></tr>`;
 
-      categories.forEach(cat => {
+      document.querySelectorAll(".category").forEach(cat => {
         const catName = cat.querySelector(".cat-name").value || "หมวดค่าใช้จ่าย";
-        reportText += `<tr><td colspan="4" style="background:#eee;"><b>${catName}</b></td></tr>`;
-        
-        const subItems = cat.querySelectorAll(".expense");
-        subItems.forEach(exp => {
-          const name = exp.querySelector("input[type=text]").value || "ไม่ระบุ";
-          const amount = parseFloat(exp.querySelector("input[type=number]").value) || 0;
-          const dueDate = exp.querySelector("input[type=date]").value || "-";
-          const paidInfo = exp.querySelector(".paid-info").textContent;
-          totalExpenses += amount;
-
-          reportText += `<tr>
-            <td>${name}</td>
-            <td>${amount} บาท</td>
-            <td>${dueDate}</td>
-            <td>${paidInfo && paidInfo.trim() !== "" ? paidInfo : "ยังไม่จ่าย"}</td>
+        html += `<tr class="cat-row"><td colspan="4">${esc(catName)}</td></tr>`;
+        cat.querySelectorAll(".expense").forEach(exp => {
+          const name = exp.querySelector(".name").value || "ไม่ระบุ";
+          const amount = parseFloat(exp.querySelector(".amt").value) || 0;
+          const due = exp.querySelector(".due").value;
+          const paidInfo = exp.querySelector(".paid-info").textContent.trim();
+          total += amount;
+          html += `<tr>
+            <td>${esc(name)}</td>
+            <td class="num">${fmt(amount)} บาท</td>
+            <td>${esc(thaiDate(due))}</td>
+            <td>${paidInfo ? esc(paidInfo) : "ยังไม่จ่าย"}</td>
           </tr>`;
         });
       });
 
-      reportText += `</table>`;
-      reportText += `<p>📉 รวมค่าใช้จ่าย: <b>${totalExpenses}</b> บาท</p>`;
-      reportText += `<p>✅ คงเหลือสุทธิ: <b>${salary - totalExpenses}</b> บาท</p>`;
-      document.getElementById("report").innerHTML = reportText;
+      html += `</table>
+        <div class="totals">
+          <span>รวมค่าใช้จ่าย: <b>${fmt(total)}</b> บาท</span>
+          <span>คงเหลือสุทธิ: <b>${fmt(salary - total)}</b> บาท</span>
+        </div>`;
+      const report = document.getElementById("report");
+      report.innerHTML = html;
+      report.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 
-      saveData();
+    async function captureReport() {
+      const report = document.getElementById("report");
+      if (!report.innerHTML.trim()) generateReport();
+      return html2canvas(report, { scale: 2, backgroundColor: "#ffffff" });
     }
 
     async function exportImage() {
-      const report = document.getElementById("report");
-      const canvas = await html2canvas(report);
+      const canvas = await captureReport();
       const link = document.createElement("a");
-      link.download = "report.png";
+      link.download = "report-" + activeMonth + ".png";
       link.href = canvas.toDataURL("image/png");
       link.click();
     }
 
     async function exportPDF() {
       const { jsPDF } = window.jspdf;
-      const report = document.getElementById("report");
-      const canvas = await html2canvas(report);
-      const imgData = canvas.toDataURL("image/png");
-
+      const canvas = await captureReport();
+      const img = canvas.toDataURL("image/png");
       const pdf = new jsPDF();
-      pdf.addImage(imgData, "PNG", 10, 10, 180, 0);
-      pdf.save("report.pdf");
+      const pageH = 297, w = 190;
+      const h = canvas.height * w / canvas.width;
+      let left = h, pos = 0;
+      pdf.addImage(img, "PNG", 10, pos, w, h);
+      left -= pageH;
+      while (left > 0) {          // รายงานยาวเกิน 1 หน้า ต่อหน้าถัดไปให้ครบ
+        pos -= pageH;
+        pdf.addPage();
+        pdf.addImage(img, "PNG", 10, pos, w, h);
+        left -= pageH;
+      }
+      pdf.save("report-" + activeMonth + ".pdf");
     }
 
-    function notifyExpenses() {
-      const categories = document.querySelectorAll(".category");
-      const today = new Date().toISOString().split("T")[0];
-      let dueList = [];
+    /* ---------- backup / restore / clear ---------- */
+    function exportBackup() {
+      saveData();
+      const blob = new Blob([JSON.stringify(store, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "budget-backup-" + todayStr() + ".json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
 
-      categories.forEach(cat => {
-        const subItems = cat.querySelectorAll(".expense");
-        subItems.forEach(exp => {
-          const name = exp.querySelector("input[type=text]").value || "ไม่ระบุ";
-          const dueDate = exp.querySelector("input[type=date]").value;
-          const paidInfo = exp.querySelector(".paid-info").textContent;
-          if (dueDate === today && (!paidInfo || paidInfo.trim() === "")) {
-            dueList.push(name);
+    function importBackup(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const s = JSON.parse(reader.result);
+          if (!s || typeof s.months !== "object" || !s.months) throw new Error("bad");
+          if (confirm("การนำเข้าจะแทนที่ข้อมูลปัจจุบันทั้งหมด ดำเนินการต่อหรือไม่?")) {
+            store = { months: s.months, current: "" };
+            const keys = Object.keys(s.months).sort();
+            activeMonth = (s.current && s.months[s.current]) ? s.current : (keys.pop() || todayStr().slice(0, 7));
+            monthEl().value = activeMonth;
+            render(store.months[activeMonth] || { salary: "", categories: [] });
+            persist();
           }
-        });
-      });
-
-      if (dueList.length > 0) {
-        alert("🔔 วันนี้มีค่าใช้จ่ายที่ต้องจ่าย:\n" + dueList.join(", "));
-      }
+        } catch (e) {
+          alert("อ่านไฟล์ไม่ได้ ใช้ไฟล์ .json ที่ดาวน์โหลดจากหน้านี้เท่านั้น");
+        }
+        input.value = "";
+      };
+      reader.readAsText(file);
     }
 
-    function saveData() {
-      const salary = document.getElementById("salary").value;
-      const salaryMonth = document.getElementById("salaryMonth").value;
-      localStorage.setItem("salary", salary);
-      localStorage.setItem("salaryMonth", salaryMonth);
-
-      const categories = document.querySelectorAll(".category");
-      let data = [];
-      categories.forEach(cat => {
-        const catName = cat.querySelector(".cat-name").value;
-        let subExpenses = [];
-        const subItems = cat.querySelectorAll(".expense");
-        subItems.forEach(exp => {
-          subExpenses.push({
-            name: exp.querySelector("input[type=text]").value,
-            amount: exp.querySelector("input[type=number]").value,
-            dueDate: exp.querySelector("input[type=date]").value,
-            paidInfo: exp.querySelector(".paid-info").textContent
-          });
-        });
-        data.push({ name: catName, subExpenses: subExpenses });
-      });
-      localStorage.setItem("categories", JSON.stringify(data));
+    function clearMonth() {
+      if (!confirm("ล้างข้อมูลของเดือน " + thaiMonth(activeMonth) + " ใช่หรือไม่?")) return;
+      delete store.months[activeMonth];
+      render({ salary: "", categories: [] });
+      persist();
     }
 
-    function clearData() {
-      if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลทั้งหมด?")) {
-        localStorage.removeItem("salary");
-        localStorage.removeItem("salaryMonth");
-        localStorage.removeItem("categories");
-
-        document.getElementById("salary").value = "";
-        document.getElementById("salaryMonth").value = "";
-        document.getElementById("expenses").innerHTML = "";
-        document.getElementById("report").innerHTML = "";
-
-        alert("✅ ล้างข้อมูลเรียบร้อยแล้ว");
-      }
+    function clearAll() {
+      if (!confirm("ล้างข้อมูลทุกเดือนใช่หรือไม่? ควรดาวน์โหลดไฟล์สำรองก่อน")) return;
+      store = { months: {}, current: activeMonth };
+      ["salary", "salaryMonth", "categories"].forEach(safeRemove);
+      render({ salary: "", categories: [] });
+      persist();
     }
   </script>
 </body>
